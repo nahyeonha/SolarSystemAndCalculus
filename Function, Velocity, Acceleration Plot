@@ -1,0 +1,63 @@
+"""
+Function, Velocity, and Acceleration Plot
+- Multiple functions
+- Central difference for better derivative approximation
+- Dynamic user input
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Central difference derivative
+def derivative1(f, x, h=1e-3):
+    return [(f(xi + h) - f(xi - h)) / (2*h) for xi in x]
+
+def derivative2(f, x, h=1e-3):
+    d1 = derivative1(f, x, h)
+    return [(d1[i+1]-d1[i])/h for i in range(len(d1)-1)] + [0]  # same length
+
+# Plotting function
+def plot_functions(func_list, A, B, h=1e-3):
+    x = np.arange(A, B, h)
+    plt.figure(figsize=(10,6))
+
+    colors = ['blue','orange','green','purple']
+    for i, f in enumerate(func_list):
+        y = f(x)
+        y_vel = derivative1(f, x, h)
+        y_acc = derivative2(f, x, h)
+        plt.plot(x, y, label=f"{f.__name__} (Function)", color=colors[i%4])
+        plt.plot(x, y_vel, linestyle='--', label=f"{f.__name__} (Velocity)")
+        plt.plot(x, y_acc, linestyle=':', label=f"{f.__name__} (Acceleration)")
+
+    plt.xlabel("x")
+    plt.ylabel("y / Velocity / Acceleration")
+    plt.title("Function, Velocity, and Acceleration")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+# User input for multiple functions
+if __name__ == "__main__":
+    print("Define up to 3 functions in Python syntax (e.g., lambda x: x**2)")
+    funcs = []
+    for i in range(3):
+        try:
+            s = input(f"Function {i+1} (or Enter to skip): ")
+            if s.strip() == "":
+                continue
+            f = eval(s)
+            funcs.append(f)
+        except:
+            print("Invalid function. Skipping.")
+    
+    if not funcs:
+        funcs = [lambda x: x**2]  # default
+
+    try:
+        A = float(input("Start x (A): "))
+        B = float(input("End x (B): "))
+    except:
+        A, B = 0, 10
+
+    plot_functions(funcs, A, B)

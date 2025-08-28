@@ -1,0 +1,105 @@
+"""
+Solar System Simulation
+- Only Sun-planet gravity (2-body)
+- Basic planet motion visualization
+- No orbit lines, no distance display
+- Simple keyboard controls: SPACE to pause, ESC to quit
+"""
+
+import pygame
+import math
+
+# Initialize Pygame
+pygame.init()
+WIDTH, HEIGHT = 1000, 700
+WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Simplified Solar System")
+
+# Colors
+BLACK = (0,0,0)
+WHITE = (255,255,255)
+SUN_COLOR = (255,165,0)
+PLANET_COLORS = [(169,169,169),(100,149,237),(255,69,0),(222,184,135)]
+
+# Constants
+AU = 149.6e6 * 1000  # meters
+G = 6.67430e-11
+TIMESTEP = 24*3600
+SCALE = 200 / AU  # pixels per AU
+
+# Planet class
+class Planet:
+    def __init__(self, name, x, y, radius, color, mass, y_vel=0, sun=False):
+        self.name = name
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.color = color
+        self.mass = mass
+        self.sun = sun
+        self.x_vel = 0
+        self.y_vel = y_vel
+
+    def attraction(self, other):
+        dx = other.x - self.x
+        dy = other.y - self.y
+        distance = math.sqrt(dx**2 + dy**2)
+        if distance == 0:
+            return 0,0
+        force = G * self.mass * other.mass / distance**2
+        theta = math.atan2(dy, dx)
+        return math.cos(theta)*force, math.sin(theta)*force
+
+    def update_position(self, sun):
+        if self.sun:
+            return
+        fx, fy = self.attraction(sun)
+        self.x_vel += fx/self.mass * TIMESTEP
+        self.y_vel += fy/self.mass * TIMESTEP
+        self.x += self.x_vel * TIMESTEP
+        self.y += self.y_vel * TIMESTEP
+
+    def draw(self, window):
+        x = self.x * SCALE + WIDTH/2
+        y = self.y * SCALE + HEIGHT/2
+        pygame.draw.circle(window, self.color, (int(x), int(y)), self.radius)
+
+# Create Sun and planets
+sun = Planet("Sun", 0, 0, 30, SUN_COLOR, 1.98892e30, sun=True)
+planets = [
+    Planet("Mercury", 0.387*AU, 0, 5, PLANET_COLORS[0], 3.30e23, -47.4e3),
+    Planet("Earth", AU, 0, 10, PLANET_COLORS[1], 5.9742e24, -29.78e3),
+    Planet("Mars", 1.524*AU, 0, 8, PLANET_COLORS[2], 6.39e23, -24.1e3),
+    Planet("Jupiter", 5.203*AU, 0, 15, PLANET_COLORS[3], 1.898e27, -13.1e3)
+]
+
+# Main loop
+run = True
+pause = False
+clock = pygame.time.Clock()
+
+while run:
+    clock.tick(60)
+    WINDOW.fill(BLACK)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_ESCAPE]:
+        run = False
+    if keys[pygame.K_SPACE]:
+        pause = not pause
+
+    if not pause:
+        for planet in planets:
+            planet.update_position(sun)
+
+    sun.draw(WINDOW)
+    for planet in planets:
+        planet.draw(WINDOW)
+
+    pygame.display.update()
+
+pygame.quit()
